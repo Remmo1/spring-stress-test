@@ -92,7 +92,7 @@
 				<artifactId>gatling-maven-plugin</artifactId>
 				<version>4.2.9</version>
 				<configuration>
-					<simulationClass>com.example.stres.BookSaveSimulation</simulationClass>
+					<simulationClass>com.example.bookstore.BookSaveSimulation</simulationClass>
 				</configuration>
 			</plugin>
 		</plugins>
