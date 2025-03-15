@@ -1,8 +1,6 @@
 package com.example.bookstore;
 
-import static io.gatling.javaapi.core.CoreDsl.StringBody;
-import static io.gatling.javaapi.core.CoreDsl.global;
-import static io.gatling.javaapi.core.CoreDsl.rampUsersPerSec;
+import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.http;
 
 import java.time.Duration;
@@ -14,6 +12,7 @@ import java.util.stream.Stream;
 import com.github.javafaker.Faker;
 
 import io.gatling.javaapi.core.CoreDsl;
+import io.gatling.javaapi.core.OpenInjectionStep;
 import io.gatling.javaapi.core.OpenInjectionStep.RampRate.RampRateOpenInjectionStep;
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Simulation;
@@ -22,10 +21,39 @@ import io.gatling.javaapi.http.HttpProtocolBuilder;
 
 public class BookSaveSimulation extends Simulation {
 
+    // Test 1: Normal conditions
+    OpenInjectionStep[] firstOpenInjectionSteps = {
+            rampUsersPerSec(5)                      // Start at 5 users/sec
+                    .to(100)                        // Increase to 100 users/sec
+                    .during(Duration.ofSeconds(120)),  // Ramp-up in 2 min
+            constantUsersPerSec(100)                // Hold at 100 users/sec
+                    .during(600)                    // Keep it for 10 minutes
+    };
+
+    // Test 2: Spike test
+    OpenInjectionStep[] secondOpenInjectionSteps = {
+            rampUsersPerSec(10)
+                    .to(200)
+                    .during(Duration.ofSeconds(60)),
+            constantUsersPerSec(200)
+                    .during(300)
+    };
+
+    // Test 3: Long term test
+    OpenInjectionStep[] thirdOpenInjectionSteps = {
+            rampUsersPerSec(2)
+                    .to(50)
+                    .during(Duration.ofSeconds(180)),
+            constantUsersPerSec(50)
+                    .during(1200)
+    };
+
     public BookSaveSimulation() {
 
         setUp(buildPostScenario()
-                .injectOpen(injection())
+                .injectOpen(
+                        firstOpenInjectionSteps
+                )
                 .protocols(setupProtocol())).assertions(global().responseTime()
                 .max()
                 .lte(10000), global().successfulRequests()
@@ -63,14 +91,4 @@ public class BookSaveSimulation extends Simulation {
                 .userAgentHeader("Performance Test");
     }
 
-    private RampRateOpenInjectionStep injection() {
-        int totalUsers = 100;
-        double userRampUpPerInterval = 10;
-        double rampUpIntervalInSeconds = 30;
-
-        int rampUptimeSeconds = 300;
-        int duration = 300;
-        return rampUsersPerSec(userRampUpPerInterval / (rampUpIntervalInSeconds)).to(totalUsers)
-                .during(Duration.ofSeconds(rampUptimeSeconds + duration));
-    }
 }
